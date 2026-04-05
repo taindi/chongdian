@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>电车充电记录</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            padding-bottom: 20px;
+            -webkit-text-size-adjust: 100%;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 15px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+        
+        .container {
+            padding: 15px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        .btn-primary {
+            width: 100%;
+            padding: 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-bottom: 15px;
+            -webkit-appearance: none;
+            touch-action: manipulation;
+        }
+        
+        .btn-primary:active {
+            opacity: 0.8;
+        }
+        
+        .record-list {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .record-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            -webkit-touch-callout: none;
+            user-select: none;
+        }
+        
+        .record-item:last-child {
+            border-bottom: none;
+        }
+        
+        .record-item:active {
+            background: #f5f5f5;
+        }
+        
+        .record-info h3 {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .record-info p {
+            font-size: 16px;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .record-price {
+            text-align: right;
+        }
+        
+        .record-price .amount {
+            font-size: 20px;
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        
+        .record-price .unit-price {
+            font-size: 12px;
+            color: #999;
+            margin-top: 3px;
+        }
+        
+        .record-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .action-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 12px;
+            cursor: pointer;
+            -webkit-appearance: none;
+            touch-action: manipulation;
+        }
+        
+        .action-btn.delete {
+            background: #ff4757;
+        }
+        
+        .action-btn:active {
+            opacity: 0.8;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: flex-end;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            width: 100%;
+            max-width: 500px;
+            border-radius: 20px 20px 0 0;
+            padding: 20px;
+            animation: slideUp 0.3s ease;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-header h2 {
+            font-size: 18px;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #999;
+            cursor: pointer;
+            padding: 5px;
+            -webkit-appearance: none;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            -webkit-appearance: none;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn-submit {
+            width: 100%;
+            padding: 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+            -webkit-appearance: none;
+        }
+        
+        .export-btn {
+            background: #2ecc71;
+            margin-top: 10px;
+        }
+        
+        .date-range-stats {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        
+        .date-range-stats.active {
+            display: block;
+        }
+        
+        .date-range-stats h3 {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .date-range-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .date-range-form input {
+            flex: 1;
+            min-width: 120px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            -webkit-appearance: none;
+        }
+        
+        .date-range-form button {
+            padding: 10px 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            -webkit-appearance: none;
+            touch-action: manipulation;
+        }
+        
+        .range-result {
+            display: flex;
+            justify-content: space-around;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .range-result-item {
+            text-align: center;
+        }
+        
+        .range-result-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .range-result-label {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>⚡ 电车充电记录</h1>
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="totalKwh">0</div>
+                <div class="stat-label">总电量(kWh)</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="totalCost">¥0</div>
+                <div class="stat-label">总花费</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="avgPrice">¥0</div>
+                <div class="stat-label">平均单价</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <button class="btn-primary" onclick="openModal()">+ 添加充电记录</button>
+        <button class="btn-primary export-btn" onclick="exportData()">📋 复制备份代码</button>
+        <button class="btn-primary" style="background:#9b59b6;margin-top:0;" onclick="importData()">📤 导入备份</button>
+        
+        <div class="date-range-stats" id="dateRangeStats">
+            <h3>📅 日期范围统计</h3>
+            <div class="date-range-form">
+                <input type="date" id="startDate" placeholder="开始日期">
+                <input type="date" id="endDate" placeholder="结束日期">
+                <button onclick="calculateRangeStats()">统计</button>
+                <button onclick="clearRangeStats()" style="background:#95a5a6;">清除</button>
+            </div>
+            <div class="range-result" id="rangeResult" style="display:none;">
+                <div class="range-result-item">
+                    <div class="range-result-value" id="rangeDays">0</div>
+                    <div class="range-result-label">天数</div>
+                </div>
+                <div class="range-result-item">
+                    <div class="range-result-value" id="rangeKwh">0</div>
+                    <div class="range-result-label">电量(kWh)</div>
+                </div>
+                <div class="range-result-item">
+                    <div class="range-result-value" id="rangeCost">¥0</div>
+                    <div class="range-result-label">费用</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="record-list" id="recordList">
+            <div class="empty-state">暂无记录，点击上方按钮添加</div>
+        </div>
+    </div>
+    
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">添加充电记录</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <form onsubmit="saveRecord(event)">
+                <input type="hidden" id="editId" value="">
+                <div class="form-group">
+                    <label>日期</label>
+                    <input type="date" id="date" required>
+                </div>
+                <div class="form-group">
+                    <label>充电电量 (kWh)</label>
+                    <input type="number" id="kwh" step="0.1" placeholder="例如: 45.5" required>
+                </div>
+                <div class="form-group">
+                    <label>花费金额 (¥)</label>
+                    <input type="number" id="cost" step="0.01" placeholder="例如: 32.50" required>
+                </div>
+                <button type="submit" class="btn-submit" id="submitBtn">保存记录</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 数据存储
+        let records = [];
+        
+        // 从 localStorage 加载数据
+        function loadRecords() {
+            try {
+                const stored = localStorage.getItem('chargeRecords');
+                if (stored) {
+                    records = JSON.parse(stored);
+                    if (!Array.isArray(records)) {
+                        records = [];
+                    }
+                }
+            } catch (e) {
+                records = [];
+            }
+        }
+        
+        // 保存数据到 localStorage
+        function saveToStorage() {
+            localStorage.setItem('chargeRecords', JSON.stringify(records));
+        }
+        
+        // 初始化日期为今天
+        function initDate() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            document.getElementById('date').value = year + '-' + month + '-' + day;
+        }
+        
+        // 渲染记录列表
+        function renderRecords() {
+            const listEl = document.getElementById('recordList');
+            
+            if (records.length === 0) {
+                listEl.innerHTML = '<div class="empty-state">暂无记录，点击上方按钮添加</div>';
+                updateStats();
+                return;
+            }
+            
+            // 按日期倒序
+            const sortedRecords = [...records].sort(function(a, b) {
+                return new Date(b.date).getTime() - new Date(a.date).getTime();
+            });
+            
+            var html = '';
+            for (var i = 0; i < sortedRecords.length; i++) {
+                var record = sortedRecords[i];
+                var unitPrice = (record.cost / record.kwh).toFixed(2);
+                html += '<div class="record-item">' +
+                    '<div class="record-info">' +
+                        '<h3>' + formatDate(record.date) + '</h3>' +
+                        '<p>' + record.kwh.toFixed(1) + ' kWh</p>' +
+                    '</div>' +
+                    '<div class="record-actions">' +
+                        '<div class="record-price">' +
+                            '<div class="amount">¥' + record.cost.toFixed(2) + '</div>' +
+                            '<div class="unit-price">¥' + unitPrice + '/kWh</div>' +
+                        '</div>' +
+                        '<button class="action-btn" onclick="editRecord(\'' + record.id + '\'); event.stopPropagation();">编辑</button>' +
+                        '<button class="action-btn delete" onclick="deleteRecord(\'' + record.id + '\'); event.stopPropagation();">删除</button>' +
+                    '</div>' +
+                '</div>';
+            }
+            listEl.innerHTML = html;
+            
+            updateStats();
+        }
+        
+        // 格式化日期
+        function formatDate(dateStr) {
+            var date = new Date(dateStr);
+            var month = date.getMonth() + 1;
+            var day = date.getDate();
+            return month + '月' + day + '日';
+        }
+        
+        // 更新统计
+        function updateStats() {
+            var totalKwh = 0;
+            var totalCost = 0;
+            for (var i = 0; i < records.length; i++) {
+                totalKwh += records[i].kwh;
+                totalCost += records[i].cost;
+            }
+            var avgPrice = totalKwh > 0 ? totalCost / totalKwh : 0;
+            
+            document.getElementById('totalKwh').textContent = totalKwh.toFixed(1);
+            document.getElementById('totalCost').textContent = '¥' + totalCost.toFixed(0);
+            document.getElementById('avgPrice').textContent = '¥' + avgPrice.toFixed(2);
+        }
+        
+        // 打开弹窗（添加模式）
+        function openModal() {
+            document.getElementById('modalTitle').textContent = '添加充电记录';
+            document.getElementById('submitBtn').textContent = '保存记录';
+            document.getElementById('editId').value = '';
+            document.getElementById('kwh').value = '';
+            document.getElementById('cost').value = '';
+            initDate();
+            document.getElementById('modal').classList.add('active');
+        }
+        
+        // 打开弹窗（编辑模式）
+        function editRecord(id) {
+            var record = null;
+            for (var i = 0; i < records.length; i++) {
+                if (records[i].id === id) {
+                    record = records[i];
+                    break;
+                }
+            }
+            if (!record) return;
+            
+            document.getElementById('modalTitle').textContent = '编辑充电记录';
+            document.getElementById('submitBtn').textContent = '更新记录';
+            document.getElementById('editId').value = record.id;
+            document.getElementById('date').value = record.date;
+            document.getElementById('kwh').value = record.kwh;
+            document.getElementById('cost').value = record.cost;
+            document.getElementById('modal').classList.add('active');
+        }
+        
+        // 关闭弹窗
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+        
+        // 保存记录（添加或编辑）
+        function saveRecord(e) {
+            e.preventDefault();
+            
+            var editId = document.getElementById('editId').value;
+            var date = document.getElementById('date').value;
+            var kwh = parseFloat(document.getElementById('kwh').value);
+            var cost = parseFloat(document.getElementById('cost').value);
+            
+            if (editId) {
+                // 编辑模式
+                for (var i = 0; i < records.length; i++) {
+                    if (records[i].id === editId) {
+                        records[i].date = date;
+                        records[i].kwh = kwh;
+                        records[i].cost = cost;
+                        break;
+                    }
+                }
+            } else {
+                // 添加模式
+                var record = {
+                    id: Date.now().toString(),
+                    date: date,
+                    kwh: kwh,
+                    cost: cost
+                };
+                records.push(record);
+            }
+            
+            saveToStorage();
+            closeModal();
+            renderRecords();
+        }
+        
+        // 删除记录
+        function deleteRecord(id) {
+            if (confirm('确定要删除这条记录吗？')) {
+                var newRecords = [];
+                for (var i = 0; i < records.length; i++) {
+                    if (records[i].id !== id) {
+                        newRecords.push(records[i]);
+                    }
+                }
+                records = newRecords;
+                saveToStorage();
+                renderRecords();
+            }
+        }
+        
+        // 导出数据
+        function exportData() {
+            if (records.length === 0) {
+                alert('没有数据可导出');
+                return;
+            }
+            
+            var dataStr = JSON.stringify(records);
+            
+            // 显示复制对话框
+            var modal = document.createElement('div');
+            modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:2000;display:flex;justify-content:center;align-items:center;padding:20px;';
+            modal.innerHTML = '<div style="background:white;border-radius:15px;padding:20px;max-width:400px;width:100%;max-height:80vh;overflow:auto;">' +
+                '<h3 style="margin-bottom:15px;">📋 复制备份代码</h3>' +
+                '<p style="color:#666;font-size:14px;margin-bottom:10px;">长按下方代码框，全选并复制，然后粘贴到微信收藏或备忘录保存：</p>' +
+                '<textarea id="backupText" style="width:100%;height:150px;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:12px;resize:none;" readonly>' + dataStr + '</textarea>' +
+                '<button onclick="this.closest(\'.modal\').remove()" style="width:100%;padding:12px;background:#667eea;color:white;border:none;border-radius:8px;margin-top:15px;font-size:16px;-webkit-appearance:none;">关闭</button>' +
+            '</div>';
+            modal.className = 'modal';
+            document.body.appendChild(modal);
+            
+            // 自动选中文字
+            setTimeout(function() {
+                var textarea = document.getElementById('backupText');
+                if (textarea) {
+                    textarea.select();
+                }
+            }, 100);
+        }
+        
+        // 导入数据
+        function importData() {
+            var code = prompt('请粘贴备份代码：');
+            if (!code) return;
+            
+            try {
+                var imported = JSON.parse(code.trim());
+                if (!Array.isArray(imported)) {
+                    throw new Error('格式错误');
+                }
+                
+                if (confirm('确定导入 ' + imported.length + ' 条记录吗？这将覆盖现有数据。')) {
+                    records = imported;
+                    saveToStorage();
+                    renderRecords();
+                    alert('导入成功！');
+                }
+            } catch (e) {
+                alert('备份代码格式错误，请检查后再试');
+            }
+        }
+        
+        // 点击遮罩关闭弹窗
+        document.getElementById('modal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+        
+        // 日期范围统计
+        function showDateRangeStats() {
+            document.getElementById('dateRangeStats').classList.add('active');
+        }
+        
+        function calculateRangeStats() {
+            var startDateStr = document.getElementById('startDate').value;
+            var endDateStr = document.getElementById('endDate').value;
+            
+            if (!startDateStr || !endDateStr) {
+                alert('请选择开始和结束日期');
+                return;
+            }
+            
+            var startDate = new Date(startDateStr);
+            var endDate = new Date(endDateStr);
+            
+            if (startDate > endDate) {
+                alert('开始日期不能晚于结束日期');
+                return;
+            }
+            
+            // 计算天数（包含首尾两天）
+            var diffTime = Math.abs(endDate - startDate);
+            var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+            
+            // 筛选范围内的记录
+            var filteredRecords = [];
+            for (var i = 0; i < records.length; i++) {
+                var r = records[i];
+                var recordDate = new Date(r.date);
+                var rDate = new Date(recordDate.getFullYear(), recordDate.getMonth(), recordDate.getDate());
+                var sDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+                var eDate = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+                if (rDate >= sDate && rDate <= eDate) {
+                    filteredRecords.push(r);
+                }
+            }
+            
+            var totalKwh = 0;
+            var totalCost = 0;
+            for (var i = 0; i < filteredRecords.length; i++) {
+                totalKwh += filteredRecords[i].kwh;
+                totalCost += filteredRecords[i].cost;
+            }
+            
+            document.getElementById('rangeDays').textContent = diffDays;
+            document.getElementById('rangeKwh').textContent = totalKwh.toFixed(1);
+            document.getElementById('rangeCost').textContent = '¥' + totalCost.toFixed(0);
+            document.getElementById('rangeResult').style.display = 'flex';
+        }
+        
+        function clearRangeStats() {
+            document.getElementById('startDate').value = '';
+            document.getElementById('endDate').value = '';
+            document.getElementById('rangeResult').style.display = 'none';
+        }
+        
+        // 初始化
+        loadRecords();
+        initDate();
+        showDateRangeStats();
+        renderRecords();
+    </script>
+</body>
+</html>
